@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="author" content="Tomas Bucek" />
+    <meta
+      name="google-signin-client_id"
+      content="1029678842004-cgp7r7hb11lbl8qm0t5cg7576944sea5.apps.googleusercontent.com"
+    />
+    <!--
+			Z neznamych pricin nefunguje googleSignIn pri spusteni cez CodeSandBox, 
+			co robi problemy pri prvkoch, kde sa nieco zadava(pridanie clanku, komentara).
+			Lokalne(mimo CodeSandBox) vsak vsetko funguje
+		-->
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/styles.css" media="screen" />
+
+    <title>F1</title>
+  </head>
+
+  <body>
+    <header>
+      <h2 class="mainh2" id="menu">FORMULA 1</h2>
+    </header>
+
+    <img
+      src="nove.png"
+      srcset="nove.png 138w, stare.jpg 255w"
+      sizes="(min-width: 600px) 30vw, 50vw"
+      title="logo F1"
+      alt="logo"
+      class="logo"
+    />
+    <nav>
+      <h3 class="aside">Menu</h3>
+      <div class="nav">
+        <a class="tooltip" href="#welcome"
+          >Úvodná stránka
+          <span class="tooltiptext">Formula 1 je...</span>
+        </a>
+        <!--   <a class="tooltip" href="#articles/1/5">Články
+            <span class="tooltiptext">Všetky články...</span>
+        </a>
+     -->
+        <div id="article-router-view"></div>
+        <a class="tooltip" href="#artInsert"
+          >Pridaj článok
+          <span class="tooltiptext">Pridajte nový článok...</span>
+        </a>
+        <a class="tooltip" href="#opinions"
+          >Komentáre
+          <span class="tooltiptext">Komentáre návštevníkov...</span>
+        </a>
+        <a class="tooltip" href="#addOpinion"
+          >Pridaj komentár
+          <span class="tooltiptext">Pridajte vlastný komentár...</span>
+        </a>
+      </div>
+    </nav>
+    <br />
+
+    <aside>
+      <article>
+        <h3 class="aside">Autor:</h3>
+        <p>
+          Moje meno je Tomáš Buček a som študentom TUKE na odbore Informatika(2.
+          ročník).
+        </p>
+      </article>
+      <address>
+        <a
+          class="animacia"
+          href="mailto:tomas.bucek@student.tuke.sk?subject=Reakcia%20na%20Váš%20blog%20s%20názvom%20F1"
+          >Kontakt</a
+        >
+      </address>
+      <svg height="150" width="150">
+        <circle
+          cx="80"
+          cy="80"
+          r="50"
+          stroke="black"
+          stroke-width="1"
+          fill="black"
+        />
+        <circle
+          cx="80"
+          cy="80"
+          r="30"
+          stroke="white"
+          stroke-width="1"
+          fill="grey"
+        />
+      </svg>
+      <br />
+      <div id="googleSignIn">
+        <div id="SignInButton"></div>
+        <div id="SignedIn">
+          Ste prihlásený ako <span id="userName"></span>
+          <button onclick="signOut()" class="google">Odhlásiť sa</button>
+        </div>
+      </div>
+    </aside>
+
+    <main id="router-view"></main>
+
+    <footer>
+      <a class="tooltip" href="#menu"
+        >Návrat k menu
+        <span class="tooltiptext">Návrat hore...</span>
+      </a>
+      <p>Vytvorené 26.2.2020</p>
+      <p>Autor: Tomáš Buček, email: tomas.bucek@student.tuke.sk</p>
+    </footer>
+
+    <!--Templates for html, dynamically inserted by the router -->
+
+    <script id="template-welcome" type="text/template">
+      <article>
+          <h3 class="aside">Základné informácie</h3>
+          <p>Formula 1 (skrátene F1) oficiálne známa ako FIA Formula One World Championship, založená v roku 1946, je označovaná za kráľovskú disciplínu motoristického športu. Od roku 1950 sa konajú Majstrovstvá sveta jazdcov a od roku 1958 aj Pohár konštruktérov. Účastníci šampionátu pritom musia byť držiteľmi platnej Superlicencie. Takzvané monoposty sú jednomiestne na tento účel špeciálne vyrobené pretekárske autá, ktorých technické parametre sa menia vzhľadom na každoročne upravované pravidlá. Ich maximálne rýchlosti prevyšujú 350 km/h a v niektorých zákrutách musia pretekári zvládať preťaženie až 5 g. V priebehu histórie prešli monoposty formuly 1 veľkou evolúciou. Návštevníci tu môžu nájsť zoznam tímov a jazdcov ktorý do týchto tímov patria, štatistiky tohtoročnej sezóny a novinky týkajúce sa kolotoča F1.</p>
+      </article>
+    </script>
+
+    <script id="template-articles" type="text/template">
+      {{#.}}
+      <article>
+          <h3 class="aside"><a href="{{detailLink}}">{{title}}</a></h3>
+          <p class="articlecontent">
+              {{{content}}}
+          </p>
+          <p>
+              by {{author}}
+          </p>
+          <p>
+              {{dateCreated}}
+          </p>
+      </article>
+      {{/.}}
+    </script>
+
+    <script id="template-articles-error" type="text/template">
+
+      <article>
+          <h2 class="mainh2">Articles acquisition failed</h2>
+          <p>
+              {{errMessage}}
+          </p>
+      </article>
+      <footer  class="menuLink"><a href="#menuTitle">Back to the menu</a></footer>
+    </script>
+
+    <script id="template-main" type="text/template">
+      <p>
+          Strana {{currPage}} z {{pageCount}}.
+      </p>
+      <div>
+          {{#prevPage}}
+          <a href="#articles/{{prevPage}}/{{pageCount}}/1/100"><< Predošlá strana</a>
+          {{/prevPage}}
+          {{#nextPage}}
+          <a href="#articles/{{nextPage}}/{{pageCount}}/1/100">Nasledujúca strana >></a>
+          {{/nextPage}}
+      </div>
+    </script>
+
+    <script id="template-articlenav" type="text/template">
+      {{#.}}
+      <a class="tooltip" href="#articles/{{currPage}}/{{pageCount}}/1/100">Články
+          <span class="tooltiptext">Všetky články...</span>
+      </a>
+      {{/.}}
+      {{^.}}
+      <a class="tooltip" href="#articles/1/100">Články
+          <span class="tooltiptext">Všetky články...</span>
+      </a>
+      {{/.}}
+    </script>
+
+    <script id="template-opinions" type="text/template">
+      <article id="komentare_navstevnikov">
+          <h3 class="aside">Komentáre návštevníkov</h3>
+          <div id="opinionsContainer"></div>
+          {{#.}}
+          <section>
+              <h3>{{name}} <i class="datum_komentar">{{createdDate}}</i> <i class="team_komentar">{{favourite_team}}</i></h3>
+              <p>{{commentary}}</p>
+              <p>Ako velmi sa mi paci stranka: {{radio_option}}</p>
+              {{#img_url}}
+              <img src="{{img_url}}" title= "obrázok komentára" alt= "obrázok nebol vložený" class="komentarove">
+              {{/img_url}}
+              {{^img_url}}
+              (nebol vložený obrázok)
+              {{/img_url}}
+              <p>{{is_good_source}}</p>
+              <i>{{email}}</i>
+              <p>{{test}}</p>
+          </section>
+          {{/.}}
+          {{^.}}
+          <section>
+              Je nám ľúto, zatiaľ neboli pridané žiadne komentáre.
+          </section>
+          {{/.}}
+          <button id="zmazanie_komentarov" onclick="remove_old()">Zmaž staré komentáre</button>
+      </article>
+    </script>
+
+    <script id="template-addOpinion" type="text/template">
+      <article class="formularovy">
+          <h3 class="aside">Pridaj komentár</h3>
+          <form id="formular" onsubmit="return processOpnFrmData(event)">
+              <label for="name">Meno:</label>
+              <input type="text" name="login" id="name" size="20" maxlength="50" placeholder="Tu napíšte svoje meno..." required/>
+              <br>
+              <label for="email">Email:</label>
+              <input type="email" name="email" id="email" autocomplete="on" size="30" maxlength="80" placeholder="Tu napíšte svoj email..." required/>
+              <br>
+              <label for="image">Obrázok:</label>
+              <input type="url" name="obrazok" id="image" size="50" maxlength="200" placeholder="Sem vlože URL adresu obrázka..."/>
+              <br>
+              <h5>Ako veľmi sa Vám páči táto stránka?</h5>
+              <input type="radio" id="r1" name="radio_opinion" value="velmi" />
+              <label for="r1">Veľmi sa mi páči</label>
+              <br>
+              <input type="radio" id="r2" name="radio_opinion" value="stredne" />
+              <label for="r2">Celkom dobrá</label>
+              <br>
+              <input type="radio" id="r3" name="radio_opinion" value="malo" />
+              <label for="r3">Nepáči sa mi</label>
+              <br><br>
+              <label for="textarea">Váš komentár:</label>
+              <br>
+              <textarea rows="5" cols="50" name="komentar" id="textarea" placeholder="Sem vložte komentár..." required></textarea>
+              <br>
+              <input type="checkbox" id="check" name="check"/>
+              <label for="check">Táto stránka je dobrým zdrojom informácií.</label>
+              <br><br>
+              <label for="datalist_input">Ktorý tím je Váš najobľúbenejší?</label>
+              <input type="text" id="datalist_input" name="datalist_input" list="teams">
+              <datalist id="teams">
+                  <option value="Ferrari">
+                  <option value="Mercedes">
+                  <option value="Alfa Romeo">
+                  <option value="Red Bull">
+                  <option value="Mclaren">
+                  <option value="Toro Rosso">
+                  <option value="Haas">
+                  <option value="Renault">
+                  <option value="Racing Point">
+                  <option value="Williams">
+              </datalist>
+              <br>
+              <button type="submit" id="submit">Odoslať</button>
+              <button type="reset">Reset</button>
+          </form>
+      </article>
+    </script>
+
+    <script id="template-article" type="text/template">
+      <article>
+          <h3>{{title}}</h3>
+          <p>
+              by {{author}}
+          </p>
+          {{#imageLink}}
+          <figure>
+              <img src="{{imageLink}}" alt="article figure" />
+          </figure>
+          {{/imageLink}}
+          <div>{{{content}}}</div>
+          <p>
+              Kľúčové slová:
+              {{tags}}
+          </p>
+      </article>
+
+      <footer>
+          <a href="{{backLink}}" class="linkAsButton"><< Späť</a>
+          <a href="{{editLink}}" class="linkAsButton">Upraviť</a>
+          <a href="{{deleteLink}}" class="linkAsButton">Odstrániť článok</a>
+          <a href="#menu" class="linkAsButton">Na vrch stránky</a>
+      </footer>
+      <button id="baddComment" onclick="showCommentForm()">Pridaj komentár</button>
+      <br>
+          <form class="added hiddenElm" id="faddComment">
+              <label for="aCauthor">Autor:</label>
+              <input type="text" name="author" id="aCauthor" size="50" maxlength="100" placeholder="napr. Ján Trieska" required/>
+              <br>
+              <label for="aCtext">Text:</label>
+              <input type="text" name="text" id="aCtext" size="50" maxlength="200" placeholder="sem napíšte Váš názor" required/>
+              <button id="bhideComment" onclick="hideCommentForm()">Zrušiť</button>
+              <br>
+              <button id="bsendComment" onclick="addComment(event)">Odoslať</button>
+          </form>
+      <br>
+      <h3 class="aside">Komentáre</h3>
+      <div id="komentare"></div>
+      <br>
+    </script>
+
+    <script id="template_nav_comment" type="text/template">
+      <div>
+          {{#CprevPage}}
+          <a href="#article/{{id}}/{{currPage}}/{{pageCount}}/{{CprevPage}}/{{CpageCount}}"><< Predošlá strana</a>
+          {{/CprevPage}}
+          {{#CnextPage}}
+          <a href="#article/{{id}}/{{currPage}}/{{pageCount}}/{{CnextPage}}/{{CpageCount}}">Nasledujúca strana >></a>
+          {{/CnextPage}}
+          <p>Strana {{CcurrPage}} z {{CpageCount}}</p>
+      </div>
+    </script>
+
+    <script id="template-article-comment" type="text/template">
+      <article>
+          <div>{{{text}}}</div>
+          <p class="komentare_by">
+              by {{author}}
+          </p>
+      </article>
+    </script>
+
+    <script id="template-article-form" type="text/template">
+      <article>
+          <h2>{{formTitle}}</h2>
+          <br><br>
+          <form id="articleForm" onsubmit="return {{formSubmitCall}}">
+              <label for="author">Autor:</label>
+              <input type="text" name="author" id="author" value="{{author}}" size="50" title="Article author, max. length 100 characters." maxlength="100" placeholder="e.g. Ján Trieska" />
+              <br>
+              <label for="title">Názov:</label>
+              <input type="text" name="title" id="title" value="{{title}}" size="50"  maxlength="100" pattern="\S[\S\s]*" required title="Article title, mandatory item, max. length: 100 characters, the first character must not be a space." placeholder="e.g. My story." />
+              <br>
+              <label for="imageLink">Obrázok (url):</label>
+              <input type="url" name="imageLink" id="imageLink" value="{{imageLink}}" size="50" title="Image URL, max. length 100 characters." maxlength="100"/>
+              <label></label><button type="button" id="btShowFileUpload" onclick="showFileUpload()">Nahrať obrázok</button>
+              <br>
+              <fieldset class="added hiddenElm" id="fsetFileUpload">
+                  <legend>Nahranie obrázka</legend>
+                  <input type="file" id="flElm" name="file" accept="image/jpeg, image/png"/>
+                  <br />
+                  <button type="button" id="btFileUpload" onclick="uploadImg('{{urlBase}}')">Odoslať obrázok na server</button>
+                  <button type="button" id="btCancelFileUpload" onclick="cancelFileUpload()">Zrušiť nahrávanie</button>
+              </fieldset>
+
+
+              <br>
+              <label for="content">Obsah článku:</label>
+              <textarea
+                      name="content" id="content" spellcheck="true" lang="sk"
+                      cols="50" rows="20" required
+                      title="Article content, mandatory item, can be plain text or in HTML.">{{content}}</textarea>
+              <br>
+              <label for="tags">Kľúčové slovás:</label>
+              <input  type="text" name="tags" id="tags" value="{{tags}}" size="50"
+                      title="Keyword list, comma separated." placeholder="e.g. village, drama" />
+
+              <br>
+              <br>
+              <button type="reset">Reset</button>
+              <button type="submit">{{submitBtTitle}}</button>
+          </form>
+      </article>
+
+      <footer>
+          <a href="{{backLink}}" class="linkAsButton"><< Back</a>
+          <a href="#menu" class="linkAsButton">Up to the menu</a>
+      </footer>
+    </script>
+
+    <script id="template-article-add" type="text/template">
+      <article>
+          <h3 class="aside">Pridať vlastný článok</h3>
+          <form id="articleFormAdd" onsubmit="return processArticleForm(event)">
+              <label for="Aauthor">Autor:</label>
+              <input type="text" name="author" id="Aauthor" size="50" title="Article author, max. length 100 characters." maxlength="100" placeholder="napr. Ján Trieska" />
+              <br>
+              <label for="Atitle">Nadpis:</label>
+              <input type="text" name="title" id="Atitle" size="50"  maxlength="100" pattern="\S[\S\s]*" required title="Article title, mandatory item, max. length: 100 characters, the first character must not be a space." placeholder="napr. Môj článok" />
+              <br>
+              <label for="AimageLink">Obrázok (url):</label>
+              <input type="url" name="imageLink" id="AimageLink" size="50" title="Image URL, max. length 100 characters." maxlength="100"/>
+              <label></label><button type="button" id="AbtShowFileUpload" onclick="AshowFileUpload()">Nahrať obrázok</button>
+              <br>
+              <fieldset class="added hiddenElm" id="AfsetFileUpload">
+                  <legend>Nahrať obrázok</legend>
+                  <input type="file" id="AflElm" name="file" accept="image/jpeg, image/png"/>
+                  <br />
+                  <button type="button" id="AbtFileUpload" onclick="addUploadImg('https://wt.kpi.fei.tuke.sk/api')">Odoslať obrázok na server</button>
+                  <button type="button" id="AbtCancelFileUpload" onclick="AcancelFileUpload()">Zrušiť nahrávanie</button>
+              </fieldset>
+              <br>
+              <label for="Acontent">Text:</label>
+              <textarea
+                      name="content" id="Acontent" spellcheck="true" lang="sk"
+                      cols="50" rows="20" required
+                      title="Article content, mandatory item, can be plain text or in HTML."></textarea>
+              <br>
+              <label for="Atags">Kľúčové slová:</label>
+              <input  type="text" name="tags" id="Atags" size="50"
+                      title="Keyword list, comma separated." placeholder="napr. formula, preteky" />
+              <br>
+              <br>
+              <button type="reset">Reset</button>
+              <button type="submit">Odoslať</button>
+          </form>
+      </article>
+      <footer>
+          <a href="#menu" class="linkAsButton">Návrat hore</a>
+      </footer>
+    </script>
+
+    <script src="js/addOpinion.js"></script>
+    <script src="js/handleArticleForms.js"></script>
+    <script src="js/addArticle.js"></script>
+    <script type="module" src="js/routerInit.js"></script>
+    <script src="js/googleSignIn.js"></script>
+    <script
+      src="https://apis.google.com/js/platform.js?onload=startGSingIn"
+      async
+      defer
+    ></script>
+  </body>
+</html>
